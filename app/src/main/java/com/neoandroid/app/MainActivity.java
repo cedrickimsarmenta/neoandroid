@@ -2,9 +2,18 @@ package com.neoandroid.app;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import retrofit.RestAdapter;
+import retrofit.RetrofitError;
+
+import java.io.InputStream;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -15,7 +24,39 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         EditText editText = (EditText)findViewById(R.id.editText);
-        editText.setText("pulpol");
+
+
+//        RestAdapter restAdapter = new RestAdapter.Builder()
+//                .setEndpoint("http://10.10.171.157:8080/securityx/criminalRest/index")
+//                .build();
+
+        RestAdapter restAdapter = new RestAdapter.Builder()
+                .setEndpoint("https://api.github.com")
+                .build();
+// create HttpClient
+        InputStream inputStream = null;
+        HttpClient httpclient = new DefaultHttpClient();
+
+        // make GET request to the given URL
+
+        try {
+
+            HttpResponse httpResponse = httpclient.execute(new HttpGet("http://10.10.171.157:8080/securityx/criminalRest/index"));
+
+            // receive response as inputStream
+            inputStream = httpResponse.getEntity().getContent();
+
+        } catch(Exception e) {
+
+        }
+//        try {
+//            GitHubService service = restAdapter.create(GitHubService.class);
+////            CriminalService service = restAdapter.create(CriminalService.class);
+//
+//            service.userList().toString();
+//        } catch(RetrofitError e) {
+//            Log.d("Got error type: {}", e.getKind().toString());
+//        }
     }
 
 
