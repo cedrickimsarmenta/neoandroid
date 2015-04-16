@@ -1,18 +1,18 @@
 package com.neoandroid.app;
 
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.EditText;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.HttpEntity;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 
@@ -23,40 +23,7 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        EditText editText = (EditText)findViewById(R.id.editText);
-
-
-//        RestAdapter restAdapter = new RestAdapter.Builder()
-//                .setEndpoint("http://10.10.171.157:8080/securityx/criminalRest/index")
-//                .build();
-
-        RestAdapter restAdapter = new RestAdapter.Builder()
-                .setEndpoint("https://api.github.com")
-                .build();
-// create HttpClient
-        InputStream inputStream = null;
-        HttpClient httpclient = new DefaultHttpClient();
-
-        // make GET request to the given URL
-
-        try {
-
-            HttpResponse httpResponse = httpclient.execute(new HttpGet("http://10.10.171.157:8080/securityx/criminalRest/index"));
-
-            // receive response as inputStream
-            inputStream = httpResponse.getEntity().getContent();
-
-        } catch(Exception e) {
-
-        }
-//        try {
-//            GitHubService service = restAdapter.create(GitHubService.class);
-////            CriminalService service = restAdapter.create(CriminalService.class);
-//
-//            service.userList().toString();
-//        } catch(RetrofitError e) {
-//            Log.d("Got error type: {}", e.getKind().toString());
-//        }
+        new LongRunningGetIO().execute();
     }
 
 
@@ -80,5 +47,44 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+    //as suggested for calling api's from http://www.techrepublic.com/blog/software-engineer/calling-restful-services-from-your-android-app/
+    private class LongRunningGetIO extends AsyncTask<Void, Void, String> {
+
+        protected String getASCIIContentFromEntity(HttpEntity entity) throws IllegalStateException, IOException {
+            InputStream in = entity.getContent();
+            StringBuffer out = new StringBuffer();
+            int n = 1;
+            while (n>0) {
+                byte[] b = new byte[4096];
+                n =  in.read(b);
+                if (n>0) out.append(new String(b, 0, n));
+            }
+            return out.toString();
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+
+            RestAdapter restAdapter = new RestAdapter.Builder()
+                    .setEndpoint("https://api.github.com")
+                    .build();
+            String output = null;
+            try {
+                GitHubService service = restAdapter.create(GitHubService.class);
+                output = service.userList().getBody().toString();
+            } catch (RetrofitError e) {
+                Log.d("Got error type: {}", e.getKind().toString());
+            }
+            return output;
+
+        }
+
+        protected void onPostExecute(String results) {
+            if (results!=null) {
+                EditText editText = (EditText)findViewById(R.id.editText);
+                editText.setText(results);
+            }
+        }
     }
 }
