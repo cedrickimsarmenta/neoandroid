@@ -8,15 +8,25 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.internal.bind.DateTypeAdapter;
 import org.apache.http.HttpEntity;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
+import retrofit.converter.GsonConverter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
+
+    private final String REST_URL_END_POINT = "http://192.168.0.104:8080"; // change this for your local ip
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,18 +75,28 @@ public class MainActivity extends ActionBarActivity {
 
         @Override
         protected String doInBackground(Void... params) {
+            Gson gson = new GsonBuilder()
+                    .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+                    .registerTypeAdapter(Date.class, new DateTypeAdapter())
+                    .create();
+
 
             RestAdapter restAdapter = new RestAdapter.Builder()
-                    .setEndpoint("https://api.github.com")
+            .setEndpoint(REST_URL_END_POINT)
+                    .setConverter(new GsonConverter(gson))
                     .build();
-            String output = null;
+            List<Criminal> criminals = new ArrayList<Criminal>();
+
             try {
-                GitHubService service = restAdapter.create(GitHubService.class);
-                output = service.userList().getBody().toString();
+                CriminalService criminalService = restAdapter.create(CriminalService.class);
+                criminals = criminalService.listCriminals();
+
             } catch (RetrofitError e) {
                 Log.d("Got error type: {}", e.getKind().toString());
             }
-            return output;
+            EditText editText = (EditText)findViewById(R.id.editText);
+            editText.setText(criminals.get(0).alias);
+            return criminals.get(0).alias;
 
         }
 
